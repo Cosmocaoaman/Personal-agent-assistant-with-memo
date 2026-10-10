@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5ef"><title>木记 Mori · 你的个人 Agent</title>
+  <link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/flow.css">
+  <script src="/flow.js" defer></script><script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="木记首页"><img src="/favicon.svg" alt=""><span>木记 <b>Mori</b><small>YOUR PERSONAL AGENT</small></span></a>
+      <button class="new-chat" id="new-chat"><span>＋</span> 开启新对话 <kbd>N</kbd></button>
+      <nav aria-label="主导航">
+        <button class="nav-item active" data-view="chat"><span class="nav-icon">◉</span> 对话空间 <span class="nav-hint">01</span></button>
+        <button class="nav-item" data-view="memory"><span class="nav-icon">✳</span> 长期记忆 <span class="count" id="memory-count">0</span></button>
+        <button class="nav-item" data-view="tasks"><span class="nav-icon">☷</span> 我的待办 <span class="count" id="task-count">0</span></button>
+        <button class="nav-item" data-view="flow"><span class="nav-icon">⌘</span> Agent 流程 <span class="flow-nav-dot" id="flow-nav-dot" hidden></span></button>
+      </nav>
+      <div class="history-heading"><span>最近对话</span><span>↙</span></div>
+      <div id="session-list" class="session-list"></div>
+      <div class="sidebar-bottom">
+        <div class="local-note"><span class="status-dot"></span><div>记忆，留在你这里<small>本机保存 · 跨会话延续</small></div></div>
+        <button class="settings-link" id="settings-button"><span>⚙</span> 连接设置 <span class="key-indicator" id="key-indicator">待配置</span></button>
+        <div class="profile"><span class="avatar">我</span><div>个人工作空间<small>LOCAL WORKSPACE</small></div><span class="version">v2.8</span></div>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar"><div class="breadcrumb"><button id="menu-button" class="icon-button mobile-only" aria-label="切换菜单">☰</button><span>我的空间</span><span class="slash">/</span><strong id="page-label">对话空间</strong></div>
+        <div class="topbar-right"><span class="local-badge"><i></i> 本机运行</span><button class="model-button" id="model-button"><span class="model-identity"><small id="current-provider">DeepSeek</small><strong id="current-model">正在读取模型…</strong></span><span class="model-chevron">⌄</span></button></div>
+      </header>
+      <div id="test-dataset-banner" class="test-dataset-banner" role="status" hidden></div>
+
+      <section id="view-chat" class="view chat-view">
+        <div class="conversation" id="conversation">
+          <div class="welcome" id="welcome">
+            <div class="welcome-eyebrow"><span></span> A LITTLE MORE YOU, EVERY DAY</div>
+            <h1>你好，很高兴认识你。<br><span>让每一次对话，都有延续。</span></h1>
+            <p class="welcome-copy">一起理清想法、规划日常，把值得记住的留在这里。<br>我是木记，你的个人 AI 助理。</p>
+            <details class="personal-context" id="personal-context"><summary><span>新对话的基础上下文</span><span id="personal-context-count">正在准备…</span></summary><p id="personal-context-note"></p><ul id="personal-context-list"></ul><button class="text-button" id="manage-personal-context">管理个人信息与偏好 ↗</button></details>
+            <div class="intro-panel">
+              <div class="orbital" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orbit orbit-three"></div><img src="/favicon.svg" alt=""><i class="planet p1"></i><i class="planet p2"></i><i class="planet p3"></i></div>
+              <div class="intro-content"><span class="tiny-label">A MEMORY THAT STAYS</span><h2>从「认识你」，到「记得你」。</h2><p>你的偏好、正在做的事、重要的小细节。<br>保存在本机，在下一次对话中继续。</p><button class="text-button" id="explore-memory">看看我的记忆 <span>↗</span></button></div>
+            </div>
+            <div class="suggestion-heading"><span>从一个小想法开始</span><span>TRY SOMETHING</span></div>
+            <div class="suggestions">
+              <button data-prompt="请记住：我喜欢简洁的中文回答。"><span class="suggestion-icon">✳</span><strong>先认识一下我</strong><small>告诉木记你的习惯与偏好</small><span class="card-arrow">↗</span></button>
+              <button data-prompt="帮我梳理今天的安排，先问我有哪些事情要做。"><span class="suggestion-icon">☷</span><strong>理一理今天的事</strong><small>把脑海里的事情变成计划</small><span class="card-arrow">↗</span></button>
+              <button data-prompt="根据你保存的长期记忆，你记得哪些关于我的事情？"><span class="suggestion-icon">◎</span><strong>接着上次聊</strong><small>从已保存的记忆中找回线索</small><span class="card-arrow">↗</span></button>
+            </div>
+          </div>
+          <div id="messages" class="messages" aria-live="polite"></div>
+        </div>
+        <div class="composer-area"><button class="model-settings-summary" id="model-settings-summary" type="button" aria-label="查看模型与 Agent 详细设置">正在读取模型设置…</button><div class="run-status-row"><div id="run-status" class="run-status" role="status" hidden></div><button id="show-live-flow" class="text-button" hidden>查看流程 ↗</button></div>
+          <form class="composer" id="chat-form"><label class="sr-only" for="chat-input">发送给木记的消息</label><textarea id="chat-input" rows="2" maxlength="12000" placeholder="有什么想聊的？也可以说：请记住……"></textarea>
+            <div class="composer-bottom"><span class="memory-hint">✳ <span id="memory-mode">记忆子 Agent 自主维护</span></span><div class="send-area"><span>Enter 发送 · Shift + Enter 换行</span><button type="submit" id="send-button" aria-label="发送消息">↑</button></div></div>
+          </form>
+          <p class="composer-note">聊天时，基础个人上下文、相关记忆与近期对话会发送至你选择的 API 服务商。</p>
+        </div>
+      </section>
+
+      <section id="view-memory" class="view workspace-view" hidden>
+        <div class="section-heading"><div><span class="tiny-label">THINGS WORTH KEEPING</span><h1>让记忆，慢慢生长。</h1><p>这里的内容会跨会话保留。你始终可以修改，或让木记忘记。</p></div><button class="primary" id="add-memory">＋ 添加记忆</button></div>
+        <div class="memory-toolbar"><label class="search-box"><span>⌕</span><input id="memory-search" type="search" placeholder="搜索记忆中的关键词…" aria-label="搜索记忆"></label><button class="secondary" id="export-button">导出我的数据 ↗</button></div>
+        <details class="retrieval-panel"><summary>测试 Agent 召回 <span id="retrieval-mode">关键词索引</span></summary><p class="settings-note">使用自然语言测试候选记忆，不生成回答或改写记忆。结果由记忆子 Agent 在对话中继续筛选。</p><div class="retrieval-controls"><label class="search-box"><input id="retrieval-query" maxlength="2000" placeholder="例如：有哪些适合我的休息方式？" aria-label="召回测试问题"></label><button class="secondary" id="retrieval-test" type="button">测试召回</button></div><p id="retrieval-feedback" role="status"></p><div id="retrieval-results"></div></details>
+        <div class="filter-row" id="memory-filters"><button class="filter active" data-category="all">全部</button><button class="filter" data-category="profile">关于我</button><button class="filter" data-category="preference">偏好习惯</button><button class="filter" data-category="project">长期项目</button><button class="filter" data-category="note">其他笔记</button></div>
+        <div class="memory-grid" id="memory-grid"></div>
+        <p class="footnote">「关于我」「偏好习惯」和置顶记忆会默认载入对话，置顶优先。记忆子 Agent 自主补充相关上下文，并判断新增、更新、删除或不作改动。删除记忆不会删除原始聊天记录。</p>
+      </section>
+
+      <section id="view-tasks" class="view workspace-view" hidden>
+        <div class="section-heading"><div><span class="tiny-label">ONE THING AT A TIME</span><h1>为想做的事，留个位置。</h1><p>在这里添加和管理待办，也可以让木记在对话中帮你梳理计划。</p></div></div>
+        <form id="task-form" class="task-form"><label class="sr-only" for="task-input">新待办事项</label><input id="task-input" required maxlength="300" placeholder="下一件想做的事…"><button class="primary">添加待办 ＋</button></form>
+        <div id="task-list" class="task-list"></div><p class="footnote">待办保存在本机，当前版本不发送定时提醒。</p>
+      </section>
+
+      <section id="view-flow" class="view workspace-view flow-view" hidden>
+        <div class="section-heading flow-heading"><div><span class="tiny-label">BEHIND THE CONVERSATION</span><h1>看见每一步协作。</h1><p>上下文如何交接，回答与记忆如何并行，都在这里。</p></div><span class="flow-engine">LANGGRAPH <span>↗</span></span></div>
+        <div class="flow-toolbar"><label class="flow-run-label" for="flow-run-select">运行记录<select id="flow-run-select" aria-label="选择运行记录"><option value="">尚无运行记录</option></select></label><button id="flow-follow" class="secondary">跟随最新</button><button id="flow-chat" class="secondary">回到对话 ↗</button></div>
+        <p id="flow-notice" class="flow-notice" role="status">发送一条消息后，这里会显示真实执行过程。旧对话没有流程记录。</p>
+        <p id="flow-config-summary" class="flow-run-config" hidden></p>
+        <div class="flow-metrics"><div><span>运行状态</span><strong id="flow-run-status">结构预览</strong></div><div><span>总用时</span><strong id="flow-duration">—</strong></div><div><span>模型调用 / 工具执行</span><strong id="flow-counts">—</strong></div><div><span>主 Agent / 记忆 Token</span><strong id="flow-tokens">—</strong></div></div>
+        <div class="flow-layout">
+          <div class="flow-board"><div class="flow-board-heading"><span id="flow-mode">流程结构</span><div class="flow-legend"><span><i class="waiting"></i>等待</span><span><i class="running"></i>执行</span><span><i class="succeeded"></i>完成</span><span><i class="failed"></i>异常</span></div></div>
+            <div class="flow-canvas" id="flow-canvas">
+              <svg class="flow-edges" viewBox="0 0 640 555" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="flow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="context-stroke"/></marker></defs><path data-edge="prepare-recall" d="M320 108 V135"/><path data-edge="recall-answer" d="M320 233 V259 H160 V285"/><path data-edge="recall-consolidate" d="M320 233 V259 H480 V285"/><path data-edge="answer-finish" d="M160 383 V410 H320 V435"/><path data-edge="consolidate-finish" d="M480 383 V410 H320 V435"/></svg>
+              <button class="flow-node node-prepare" data-node="prepare"><span class="flow-node-eyebrow">01 · 输入</span><strong>接收消息</strong><span class="flow-node-bottom"><span class="flow-node-status">未运行</span><span class="flow-node-time">—</span></span></button>
+              <button class="flow-node node-recall" data-node="recall"><span class="flow-node-eyebrow">02 · 记忆子 Agent</span><strong>整理与交接上下文</strong><span class="flow-node-bottom"><span class="flow-node-status">未运行</span><span class="flow-node-time">—</span></span></button>
+              <span class="flow-fork-label">并行执行</span>
+              <button class="flow-node node-answer" data-node="answer"><span class="flow-node-eyebrow">03 A · 主 Agent</span><strong>生成回答</strong><span class="flow-node-bottom"><span class="flow-node-status">未运行</span><span class="flow-node-time">—</span></span></button>
+              <button class="flow-node node-consolidate" data-node="consolidate"><span class="flow-node-eyebrow">03 B · 记忆子 Agent</span><strong>判断与维护记忆</strong><span class="flow-node-bottom"><span class="flow-node-status">未运行</span><span class="flow-node-time">—</span></span></button>
+              <button class="flow-node node-finish" data-node="finish"><span class="flow-node-eyebrow">04 · 收尾</span><strong>汇总运行结果</strong><span class="flow-node-bottom"><span class="flow-node-status">未运行</span><span class="flow-node-time">—</span></span></button>
+            </div><p class="flow-board-note">主 Agent 流式返回回答，记忆分支并行运行。</p>
+          </div>
+          <aside class="flow-inspector" id="flow-inspector" aria-label="节点详情"></aside>
+        </div>
+        <div class="flow-replay"><div class="flow-replay-header"><strong>执行时间线</strong><span id="flow-replay-label">等待第一条记录</span><button id="flow-play" class="secondary" disabled>▶ 逐步回放</button><button id="flow-latest" class="text-button" disabled>显示最新</button></div><label class="sr-only" for="flow-scrubber">选择执行步骤</label><input id="flow-scrubber" type="range" min="0" max="0" value="0" disabled><div id="flow-timeline" class="flow-timeline"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settings-dialog">
+    <form id="settings-form"><div class="dialog-header"><div><span class="tiny-label">MAKE THE CONNECTION</span><h2>连接你的模型</h2></div><button type="button" class="icon-button close-dialog" aria-label="关闭设置">×</button></div>
+      <p class="dialog-description">模型、思考、联网和上下文参数。保存后从下一轮生效。</p>
+      <label>API 服务商<select id="provider" name="provider"><option value="deepseek">DeepSeek</option><option value="openai">OpenAI · GPT</option></select></label>
+      <div class="form-row"><label>模型名称<input id="model" required maxlength="100" autocomplete="off"></label><label>API Base URL<input id="base-url" required type="url" autocomplete="off"></label></div>
+      <label>API Key <span id="key-status" class="muted"></span><input id="api-key" type="password" autocomplete="new-password" maxlength="1000" placeholder="保存在本机数据库，重启后自动读取"></label>
+      <label class="checkbox-row"><input id="clear-key" type="checkbox">清除该服务商已保存的 Key</label>
+      <div class="setting-divider"></div>
+      <h3 class="settings-section-title">思考与生成</h3>
+      <div class="form-row equal"><label>思考强度<select id="reasoning-effort" aria-describedby="reasoning-note"></select></label><label>生成 Token 上限<input id="max-output-tokens" type="number" min="256" max="131072" step="1" required></label></div>
+      <p class="settings-note" id="reasoning-note"></p><p class="settings-note">生成上限包含思考和回答；不能指定内部思考链的精确长度。实际思考 Token 会在回答及流程中显示，未返回时注明未知。</p>
+      <div class="form-row equal"><label>单次请求超时（秒）<input id="request-timeout" type="number" min="10" max="300" step="1" required></label><label>API 回答详略<select id="verbosity"><option value="auto">服务商默认</option><option value="low">简短 · low</option><option value="medium">适中 · medium</option><option value="high">详细 · high</option></select></label></div>
+      <details class="settings-advanced" id="sampling-settings"><summary>采样参数 · 可选</summary><div class="form-row equal"><label>Temperature<input id="temperature" type="number" min="0" max="2" step="0.01" placeholder="留空：不传此参数"></label><label>Top-P<input id="top-p" type="number" min="0.01" max="1" step="0.01" placeholder="留空：不传此参数"></label></div><p class="settings-note" id="sampling-note"></p></details>
+      <div class="setting-divider"></div>
+      <h3 class="settings-section-title">联网与能力</h3>
+      <label class="toggle-row"><div><strong>允许主 Agent 联网搜索</strong><span id="web-search-note"></span></div><input id="web-search" type="checkbox" role="switch"></label>
+      <label>搜索上下文大小<select id="search-context-size"><option value="low">较小 · low</option><option value="medium">适中 · medium</option><option value="high">较大 · high</option></select></label>
+      <p class="settings-note">联网开启后由主 Agent 按需搜索，会显示来源链接与搜索动作。记忆子 Agent 通过下面的检索访问记忆。文件访问、系统命令和设备控制尚未接入。</p>
+      <div class="setting-divider"></div>
+      <h3 class="settings-section-title">记忆召回 · Embedding API</h3>
+      <label class="toggle-row"><div><strong>结合关键词与语义检索</strong><span>关键词使用 SQLite FTS5，语义使用 API；候选仍由子 Agent 筛选</span></div><input id="embedding-enabled" type="checkbox" role="switch"></label>
+      <div class="form-row equal"><label>Embedding 模型<input id="embedding-model" maxlength="100" required></label><label>Embedding API 地址<input id="embedding-base" type="url" required></label></div>
+      <label>Key 来源<select id="embedding-key-source"><option value="openai">复用已保存的 OpenAI Key（地址需一致）</option><option value="separate">独立 Embedding Key</option></select></label>
+      <label>独立 Embedding Key <span id="embedding-key-status" class="muted"></span><input id="embedding-key" type="password" autocomplete="new-password" maxlength="1000" placeholder="留空保留，明文存入本机数据库"></label>
+      <label class="checkbox-row"><input id="embedding-clear-key" type="checkbox">清除已保存的独立 Embedding Key</label>
+      <details class="settings-advanced"><summary>语义检索参数</summary><div class="form-row equal"><label>向量维度（0 使用模型默认）<input id="embedding-dimensions" type="number" min="0" max="4096" required></label><label>Embedding 超时（秒）<input id="embedding-timeout" type="number" min="5" max="120" required></label></div><div class="form-row equal"><label>每批建立索引的条数<input id="embedding-batch-size" type="number" min="1" max="32" required></label><label>每种检索的候选上限<input id="embedding-candidate-limit" type="number" min="12" max="100" required></label></div><label>语义相似度下限<input id="embedding-min-similarity" type="number" min="0" max="1" step="0.01" required></label></details>
+      <p class="settings-note">启用后后台建立并更新向量索引，仅新增或修改的事实需要重新生成。记忆文本与首次查询会发送到 Embedding 地址并产生 API 费用；重复查询可使用本次运行的缓存。网页搜索开关与此独立。模型、地址或维度改变后重新建立索引。接口不可用时仍可使用关键词检索。</p>
+      <div class="embedding-actions"><button type="button" class="secondary" id="embedding-probe">保存并测试 Embedding</button><button type="button" class="secondary" id="embedding-index">保存并更新语义索引</button></div><p id="embedding-status" role="status"></p>
+      <div class="setting-divider"></div>
+      <label class="toggle-row"><div><strong>允许记忆子 Agent 自主维护</strong><span>每轮自主判断是否新增、更新、删除；关闭后只读</span></div><input id="auto-memory" type="checkbox" role="switch"></label>
+      <label>上下文处理方式<select id="recall-mode"><option value="specialist">子 Agent 预取与筛选交接</option><option value="main">主 Agent 按需检索与直接回答</option></select></label>
+      <p id="recall-mode-note" class="settings-note"></p>
+      <label class="toggle-row"><div><strong>预取候选记忆</strong><span>子 Agent 模式先搜索最多 12 条候选，再由模型筛选</span></div><input id="prefetch-candidates" type="checkbox" role="switch"></label>
+      <label>交接备注字符上限<input id="handoff-summary-chars" type="number" min="64" max="1000" step="1" required></label>
+      <label>回答风格 <span class="muted">可选</span><textarea id="persona" rows="2" maxlength="2000" placeholder="例如：用中文回答，先说结论，尽量简洁。"></textarea></label>
+      <details class="settings-advanced" id="agent-limits"><summary>上下文与 Agent 执行上限</summary><div class="form-row equal"><label>近期消息条数<input id="history-messages" type="number" min="0" max="200" step="1" required></label><label>近期消息字符上限<input id="history-chars" type="number" min="1000" max="200000" step="1" required></label></div><div class="form-row equal"><label>默认基础记忆条数<input id="personal-items" type="number" min="0" max="100" step="1" required></label><label>基础记忆 JSON 字符上限<input id="personal-chars" type="number" min="1000" max="50000" step="1" required></label></div><div class="form-row equal"><label>每阶段读入记忆字符上限<input id="memory-read-chars" type="number" min="2000" max="200000" step="1" required></label><label>交接原始记忆字符上限<input id="handoff-chars" type="number" min="1000" max="50000" step="1" required></label></div><div class="form-row equal"><label>记忆每阶段模型调用上限<input id="memory-steps" type="number" min="1" max="12" step="1" required></label><label>每次模型返回的工具请求上限<input id="tool-calls-per-step" type="number" min="1" max="4" step="1" required></label></div><p class="settings-note">记忆字符预算计量完整条目的 JSON，包含预载和该阶段工具读入的条目；近期对话、提示词、摘要和工具元数据另计。容量不足会省略完整条目，不切断事实，也不决定是否值得记忆。当前消息最多 12,000 字符；每次最多 8 项改动；回答与维护固定两个并行分支。</p></details>
+      <p class="settings-note">主 Agent 与记忆子 Agent 使用同一模型、独立上下文，每轮会产生多次 API 调用。Key 以明文保存在本机数据库，重启后自动读取，聊天导出不包含 Key。推理会联网请求所选 API 地址。</p>
+      <p id="settings-feedback" role="status"></p>
+      <div class="dialog-footer"><button type="button" class="secondary" id="probe-button">保存并测试连接</button><button class="primary" id="save-settings">保存设置</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="memory-dialog"><form id="memory-form"><div class="dialog-header"><div><span class="tiny-label">KEEP A LITTLE SOMETHING</span><h2 id="memory-dialog-title">添加一条记忆</h2></div><button class="icon-button close-dialog" type="button" aria-label="关闭记忆编辑">×</button></div>
+    <input id="memory-id" type="hidden"><label>值得记住的内容<textarea id="memory-content" rows="4" required maxlength="1500" placeholder="例如：我正在学习 Python，喜欢通过具体例子理解概念。"></textarea></label>
+    <div class="form-row"><label>分类<select id="memory-category"><option value="profile">关于我</option><option value="preference">偏好习惯</option><option value="project">长期项目</option><option value="note">其他笔记</option></select></label><label>主题标识 <span class="muted">可选</span><input id="memory-key" maxlength="100" placeholder="例如 preference.language"></label></div>
+    <label class="checkbox-row"><input id="memory-pinned" type="checkbox">置顶，让木记优先回想</label><p class="settings-note">同一主题使用相同标识可以更新旧记忆。不要把密码或密钥放在这里。</p>
+    <div class="dialog-footer"><button class="secondary close-dialog" type="button">取消</button><button class="primary">保存记忆</button></div>
+  </form></dialog>
+  <div id="toast" role="status" hidden></div>
+</body>
+</html>
